@@ -1,0 +1,100 @@
+package main
+
+import "fmt"
+
+const (
+	tableContent  = "border-b border-slate-600 p-4 pl-8 pt-3 pb-3"
+	buttonClasses = "rounded px-4 py-2 text-sm"
+)
+
+templ todoForm() {
+	<form hx-post="/add" hx-trigger="submit" hx-target="#todo-list" hx-on::after-request="this.reset()">
+		<input type="text" class="rounded px-4 py-2 mr-4 mb-4" name="name" id="name" placeholder="New task"/>
+		<button class={ "bg-green-800 text-green-400", buttonClasses } type="submit">Add</button>
+	</form>
+}
+
+templ todoList(todos []Todo) {
+	<div id="todo-list" class="flex justify-center">
+		<table class="border-collapse table-auto width-full max-w-160 text-left">
+			<thead>
+				<tr>
+					<th class={ "font-bold", tableContent }>TASK</th>
+					<th class={ "font-bold text-center", tableContent }>STATUS</th>
+					<th class={ "font-bold text-center", tableContent }>COMPLETE</th>
+					<th class={ "font-bold text-center", tableContent }>DELETE</th>
+				</tr>
+			</thead>
+			<tbody>
+				for i, todo := range todos {
+					@todoItem(todo, i)
+				}
+			</tbody>
+		</table>
+	</div>
+}
+
+templ todoStatus(isComplete bool, id int) {
+	if isComplete {
+		<span id={ fmt.Sprintf("status-%d", id) }>Done</span>
+	} else {
+		<span id={ fmt.Sprintf("status-%d", id) }>Pending</span>
+	}
+}
+
+templ todoItem(todo Todo, id int) {
+	<tr class="hover:bg-slate-700 hover:text-slate-300">
+		<td class={ tableContent }>{ todo.Name }</td>
+		<td class={ "text-center", tableContent }>
+			@todoStatus(todo.IsComplete, id)
+		</td>
+		<td class={ tableContent }>
+			<button
+				hx-post={ fmt.Sprintf("/complete/%d", id) }
+				hx-trigger="click"
+				hx-target={ fmt.Sprintf("#status-%d", id) }
+				id={ fmt.Sprint(id) }
+				class={ "bg-sky-800 text-sky-400", buttonClasses }
+			>
+				Complete
+			</button>
+		</td>
+		<td class={ tableContent }>
+			<button
+				hx-post={ fmt.Sprintf("/delete/%d", id) }
+				hx-trigger="click"
+				hx-target="#todo-list"
+				id={ fmt.Sprint(id) }
+				class={ "bg-rose-800 text-rose-400", buttonClasses }
+			>
+				Delete
+			</button>
+		</td>
+	</tr>
+}
+
+templ layout(title string) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
+			<script src="https://cdn.tailwindcss.com"></script>
+			<title>{ title }</title>
+		</head>
+		<body class="bg-slate-800 text-slate-400 text-center font-sans">
+			<h1 class="text-4xl font-bold my-8">{ title }</h1>
+			<main>
+				{ children... }
+			</main>
+		</body>
+	</html>
+}
+
+templ home(title string, todos []Todo) {
+	@layout(title) {
+		@todoForm()
+		@todoList(todos)
+	}
+}
